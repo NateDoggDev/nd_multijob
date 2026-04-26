@@ -6,7 +6,8 @@ Discord: https://discord.com/invite/ey2sMahZ6t Lint Error Store: https://linterr
 
 Clean and simple multijob resource for Qbox, QBCore, and ESX that doesnt cost $20 for no reason.
 
-![nd_multijob preview](https://github.com/user-attachments/assets/c588a8ba-0189-45a5-a532-a4607412f1e6)
+<img src="https://github.com/user-attachments/assets/c588a8ba-0189-45a5-a532-a4607412f1e6" alt="nd_multi+job preview" width="380" />
+
 
 https://github.com/user-attachments/assets/058bb837-8bf9-4a10-a7cd-67730856be7e
 
