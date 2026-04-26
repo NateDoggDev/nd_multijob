@@ -1,6 +1,7 @@
 # nd_multijob
 
 Join discord for any support, and check out the store for my paid scripts :)
+
 Discord: https://discord.com/invite/ey2sMahZ6t Lint Error Store: https://linterror.com
 
 Clean and simple multijob resource for Qbox, QBCore, and ESX that doesnt cost $20 for no reason.
