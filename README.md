@@ -93,3 +93,7 @@ Join Discord for support and check out our paid scripts.
 Discord: **https://discord.com/invite/ey2sMahZ6t**
 
 Lint Error Store: **https://linterror.com**
+
+## License
+
+[CC BY-NC-SA 4.0](LICENSE) — free to use, fork, and modify for non-commercial purposes. Selling, repackaging, or bundling with any paid product is not allowed. Forks must keep this same license and credit the original author.
