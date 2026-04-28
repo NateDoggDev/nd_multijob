@@ -22,7 +22,7 @@ function Storage.Read(identifier)
     local rows = MySQL.query.await(
         ('SELECT `job_name`, `grade`, `active` FROM %s WHERE `identifier` = ? ORDER BY `active` DESC, `job_name` ASC'):format(tableName),
         { identifier }
-    )
+    ) or {}
 
     for i = 1, #rows do
         rows[i].grade = tonumber(rows[i].grade) or 0
@@ -55,6 +55,11 @@ function Storage.Upsert(identifier, jobName, grade, active)
         ]]):format(tableName),
         { identifier, jobName, grade, active }
     )
+end
+
+function Storage.Replace(identifier, jobName, grade)
+    MySQL.query.await(('DELETE FROM %s WHERE `identifier` = ?'):format(tableName), { identifier })
+    Storage.Upsert(identifier, jobName, grade, true)
 end
 
 function Storage.SetActive(identifier, jobName)

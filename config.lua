@@ -17,7 +17,9 @@ Config.Menu = {
     accent = '#c8ccd1',
     radius = 12,
     scale = 1.0,
-    iconStyle = 'outline'
+    iconStyle = 'outline',
+    showLeave = true,
+    showPay = true
 }
 
 Config.Database = {

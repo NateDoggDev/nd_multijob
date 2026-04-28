@@ -37,6 +37,10 @@ local function jobIcon(name)
     return Config.JobIcons and Config.JobIcons[tostring(name or ''):lower()] or 'briefcase'
 end
 
+local function singleJobMode()
+    return (tonumber(Config.MaxJobs) or 1) <= 1
+end
+
 local function getBridge()
     if Bridge then return Bridge end
 
@@ -62,7 +66,7 @@ local function waitForBridge()
             print(('[nd_multijob] Using %s bridge'):format(Bridge.name))
             if Bridge.name ~= 'qbox' then
                 Storage.Init()
-            elseif GetConvarInt('qbx:max_jobs_per_player', 1) < Config.MaxJobs then
+            elseif GetConvarInt('qbx:max_jobs_per_player', 1) < (tonumber(Config.MaxJobs) or 1) then
                 print(('[nd_multijob] Qbox max jobs is lower than Config.MaxJobs. Set "setr qbx:max_jobs_per_player %s" before qbx_core if you want that limit.'):format(Config.MaxJobs))
             end
             return true
@@ -92,6 +96,15 @@ local function resolveTarget(target)
     return nil, target
 end
 
+local function readStoredJobs(identifier)
+    local rows = Storage.Read(identifier)
+    local jobs = {}
+    for i = 1, #rows do
+        jobs[rows[i].job_name] = tonumber(rows[i].grade) or 0
+    end
+    return jobs
+end
+
 local function readOwnedJobs(source)
     if not Bridge then return {} end
 
@@ -102,12 +115,7 @@ local function readOwnedJobs(source)
     local identifier = Bridge.identifier(source)
     if not identifier then return {} end
 
-    local rows = Storage.Read(identifier)
-    local jobs = {}
-    for i = 1, #rows do
-        jobs[rows[i].job_name] = tonumber(rows[i].grade) or 0
-    end
-    return jobs
+    return readStoredJobs(identifier)
 end
 
 local function chooseNextJob(jobs, excluded)
@@ -159,6 +167,11 @@ local function syncActiveJob(source, active)
 
     if active.name == Config.UnemployedJob then return end
 
+    if singleJobMode() then
+        Storage.Replace(identifier, active.name, active.grade)
+        return
+    end
+
     Storage.Upsert(identifier, active.name, active.grade, true)
 end
 
@@ -189,6 +202,10 @@ local function buildPayload(source)
     end)
 
     local current = formatJob(source, active.name, active.grade, active)
+    if singleJobMode() then
+        jobs = active.name ~= Config.UnemployedJob and current and { current } or {}
+    end
+
     lastActiveJob[source] = active.name ~= Config.UnemployedJob and active.name or lastActiveJob[source]
 
     return {
@@ -198,7 +215,8 @@ local function buildPayload(source)
         current = current,
         jobs = jobs,
         settings = Config.Menu,
-        maxJobs = Config.MaxJobs
+        maxJobs = Config.MaxJobs,
+        singleJobMode = singleJobMode()
     }
 end
 
@@ -322,10 +340,33 @@ local function addOwnedJob(target, jobName, grade, makeActive)
     local source, identifier = resolveTarget(target)
     if not identifier then return false, 'Player not found.' end
 
-    local owned = source and readOwnedJobs(source) or {}
+    local owned = source and readOwnedJobs(source) or (Bridge.name ~= 'qbox' and readStoredJobs(identifier) or {})
     local count = 0
     for _ in pairs(owned) do count = count + 1 end
-    if count >= Config.MaxJobs and not owned[jobName] then
+
+    if singleJobMode() then
+        if Bridge.name == 'qbox' then
+            local ok, err = Bridge.replaceJob(identifier, jobName, grade)
+            if not ok then return false, err or 'Failed to save job.' end
+        else
+            Storage.Replace(identifier, jobName, grade)
+        end
+
+        if source then
+            if Bridge.name ~= 'qbox' then
+                Bridge.setActiveJob(source, jobName, grade, Config.DutyOnSwitch)
+            elseif Config.DutyOnSwitch ~= nil then
+                Bridge.setDuty(source, Config.DutyOnSwitch)
+            end
+
+            lastActiveJob[source] = jobName
+            queueRefresh(source)
+        end
+
+        return true
+    end
+
+    if count >= (tonumber(Config.MaxJobs) or 1) and not owned[jobName] then
         return false, 'Maximum jobs reached.'
     end
 
@@ -447,6 +488,12 @@ end)
 RegisterNetEvent('nd_multijob:server:leaveJob', function()
     local src = source
     if not Bridge and not getBridge() then return end
+
+    if Config.Menu and Config.Menu.showLeave == false then
+        notify(src, 'Leaving jobs is disabled.', 'error')
+        queueRefresh(src)
+        return
+    end
 
     local active = Bridge.activeJob(src)
     if not active or active.name == Config.UnemployedJob then

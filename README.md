@@ -23,6 +23,8 @@ Qbox uses native player job groups. QBCore and ESX use the small `nd_multijob_jo
 
 For Qbox, make sure `setr qbx:max_jobs_per_player 5` or higher is set if you want players to hold five jobs also need to set `qbx:setjob_replaces` to false. Qbox enforces these inside `qbx_core`.
 
+Set `Config.MaxJobs = 1` to use this as a simple duty menu. The UI hides the switch list, and QBCore/ESX hires replace the stored job instead of failing with "Maximum jobs reached."
+
 ## Boss Menu Integration
 
 Use exports when hiring, firing, or promoting so the menu updates immediately.

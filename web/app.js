@@ -31,11 +31,14 @@ let state = {
   confirmingLeave: false,
   jobs: mockJobs,
   maxJobs: 5,
+  singleJobMode: false,
   settings: {
     accent: '#c8ccd1',
     radius: 12,
     scale: 0.85,
-    iconStyle: 'outline'
+    iconStyle: 'outline',
+    showLeave: true,
+    showPay: true
   },
   position: loadDemoPosition()
 };
@@ -54,7 +57,7 @@ function esc(value) {
 }
 
 function money(value) {
-  return `$${Number(value || 0).toLocaleString()}/hr`;
+  return `$${Number(value || 0).toLocaleString()}`;
 }
 
 function rgba(hex, alpha) {
@@ -136,6 +139,9 @@ function renderPanel() {
   const active = activeJob();
   const rows = state.jobs.filter(job => job.id !== active.id);
   const settings = state.settings;
+  const showSwitch = !state.singleJobMode && state.maxJobs > 1;
+  const showLeave = settings.showLeave !== false;
+  const showPay = settings.showPay !== false;
 
   const accent = settings.accent || '#c8ccd1';
 
@@ -161,23 +167,23 @@ function renderPanel() {
             <div class="mj-eyebrow">Grade: ${esc(active.rank)}</div>
             <div class="mj-title">${esc(active.name)}</div>
           </div>
-          <div class="mj-pay">${money(active.salary)}</div>
+          ${showPay ? `<div class="mj-pay">${money(active.salary)}</div>` : ''}
         </div>
         <div class="mj-actions">
           <button class="mj-button mj-duty ${state.onDuty ? 'is-on' : ''}" data-duty>
             <span class="mj-duty-dot"></span>
             ${state.onDuty ? 'On Duty' : 'Off Duty'}
           </button>
-          <button class="mj-button mj-leave" data-leave title="Leave job" aria-label="Leave job">${fa('right-from-bracket')}</button>
+          ${showLeave ? `<button class="mj-button mj-leave" data-leave title="Leave job" aria-label="Leave job">${fa('right-from-bracket')}</button>` : ''}
         </div>
       </div>
 
-      <div class="mj-section">
+      ${showSwitch ? `<div class="mj-section">
         <div class="mj-section-title">Switch to</div>
         <div class="mj-list">
           ${rows.length ? rows.map(renderJobRow).join('') : '<div class="mj-empty">No other jobs available.</div>'}
         </div>
-      </div>
+      </div>` : ''}
 
       <footer class="mj-footer">
         <span>${state.jobs.length}/${state.maxJobs} jobs</span>
@@ -193,7 +199,7 @@ function renderPanel() {
 }
 
 function renderConfirm() {
-  if (!state.confirmingLeave) return '';
+  if (!state.confirmingLeave || state.settings.showLeave === false) return '';
   const active = activeJob();
 
   return `
@@ -434,7 +440,11 @@ function applyPayload(payload) {
   state.onDuty = payload.onDuty === true;
   state.current = payload.current || null;
   state.maxJobs = Number(payload.maxJobs) || state.maxJobs;
+  state.singleJobMode = payload.singleJobMode === true || state.maxJobs <= 1;
   state.settings = { ...state.settings, ...(payload.settings || {}) };
+  if (state.settings.showLeave === false) {
+    state.confirmingLeave = false;
+  }
   renderPanel();
 }
 

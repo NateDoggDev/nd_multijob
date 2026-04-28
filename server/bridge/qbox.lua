@@ -100,6 +100,15 @@ function Bridge.addJob(identifier, jobName, grade)
     return true
 end
 
+function Bridge.replaceJob(identifier, jobName, grade)
+    local ok, err = exports.qbx_core:SetJob(identifier, jobName, tonumber(grade) or 0)
+    if ok == false then
+        return false, type(err) == 'table' and err.code or err
+    end
+
+    return true
+end
+
 function Bridge.removeJob(identifier, jobName)
     local ok, err = exports.qbx_core:RemovePlayerFromJob(identifier, jobName)
     if ok == false then
